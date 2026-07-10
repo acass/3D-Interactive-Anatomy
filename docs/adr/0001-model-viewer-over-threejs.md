@@ -1,0 +1,3 @@
+# Use `<model-viewer>` instead of raw three.js
+
+We render the GLB with Google's `<model-viewer>` web component rather than building on three.js directly. For v1 the requirements are camera-only animation, HTML callouts anchored to 3D points, orbit controls, and auto-rotate — all of which `<model-viewer>` provides out of the box (hotspots, `cameraTarget`/`cameraOrbit` with built-in interpolation, `auto-rotate`), sparing us hundreds of lines of hand-rolled camera tweening and label projection. The trade-off: effects it can't express (custom shaders, exploded views, recoloring individual sub-meshes to highlight them) would force a migration to three.js. We accept that risk because none are in v1 scope, and the whole stack stays within Google alongside the Live API.
