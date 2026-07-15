@@ -1,5 +1,7 @@
 # Interactive Skull Anatomy
 
+<img width="1106" height="629" alt="image" src="https://github.com/user-attachments/assets/e1376f7e-fe0d-4cdf-b35f-c0a45bb877dc" />
+
 A web app that shows a 3D human skull with callouts for its major bones. Ask about a
 bone by voice or text — or say "give me a tour" — and the camera flies to frame it
 while an anatomy tutor explains it. See [CONTEXT.md](CONTEXT.md) for the glossary and
