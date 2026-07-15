@@ -10,7 +10,7 @@ const MODEL = "gemini-3.1-flash-live-preview";
 
 const featureIds = features.map((f) => f.id);
 
-const focusFeature = {
+export const focusFeature = {
   name: "focusFeature",
   description:
     "Move the camera to frame a specific feature of the model. Call this whenever the user asks about, points to, or wants to see a feature.",
@@ -27,14 +27,16 @@ const focusFeature = {
   },
 };
 
-const resetView = {
+export const resetView = {
   name: "resetView",
   description:
     "Return the camera to the default view of the whole model. Call when the user asks to see the whole thing, go back, or start over.",
   parameters: { type: Type.OBJECT, properties: {} },
 };
 
-function systemInstruction(): string {
+export const LIVE_MODEL = MODEL;
+
+export function systemInstruction(): string {
   const list = features
     .map((f) => `- ${f.id} ("${f.label}"): ${f.explanation}`)
     .join("\n");
