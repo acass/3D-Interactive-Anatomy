@@ -25,6 +25,10 @@ public static class ProjectSetup
     // "Meta Quest: Camera (Passthrough)" -- requests XR_FB_passthrough.
     const string FeatureCamera  = "com.unity.openxr.feature.arfoundation-meta-camera";
     const string FeatureSession = "com.unity.openxr.feature.arfoundation-meta-session";
+    // "Meta Quest Support". Without this the build injects no
+    // com.oculus.intent.category.VR / focusaware / headtracking manifest entries, and
+    // the Quest shell refuses the app an immersive session (black screen, HasFocus = 0).
+    const string FeatureQuestSupport = "com.unity.openxr.feature.metaquest";
     const string FeatureQuestPlus = "com.unity.openxr.feature.input.metaquestplus";
     const string FeatureOculusTouch = "com.unity.openxr.feature.input.oculustouch";
 
@@ -106,7 +110,7 @@ public static class ProjectSetup
         EditorUtility.SetDirty(settings);
 
         FeatureHelpers.RefreshFeatures(BuildTargetGroup.Android);
-        foreach (var id in new[] { FeatureSession, FeatureCamera, FeatureQuestPlus, FeatureOculusTouch })
+        foreach (var id in new[] { FeatureQuestSupport, FeatureSession, FeatureCamera, FeatureQuestPlus, FeatureOculusTouch })
         {
             var feature = FeatureHelpers.GetFeatureWithIdForBuildTarget(BuildTargetGroup.Android, id);
             if (feature == null) { Debug.LogError($"[setup] OpenXR feature not found: {id}"); continue; }

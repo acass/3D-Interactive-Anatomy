@@ -25,6 +25,7 @@ public class BoneHighlighter : MonoBehaviour
     MaterialPropertyBlock _block;
     string _property;
     bool _isEmissionProperty;
+    Color _restoreColor = Color.white;
 
     void Awake()
     {
@@ -44,7 +45,7 @@ public class BoneHighlighter : MonoBehaviour
         if (_property == null)
             Debug.LogError("[BoneHighlighter] no usable colour property found; highlighting is disabled");
         else
-            Debug.Log($"[BoneHighlighter] tinting via {_property} across {_byName.Count} nodes");
+            Debug.Log($"[BoneHighlighter] tinting via {_property} across {_byName.Count} nodes, restore={_restoreColor}");
     }
 
     void ResolveProperty(Material material)
@@ -55,6 +56,8 @@ public class BoneHighlighter : MonoBehaviour
             if (!material.HasProperty(candidate)) continue;
             _property = candidate;
             _isEmissionProperty = candidate.Contains("Emission") || candidate.Contains("Emissive");
+            // Restore to whatever the model actually ships with, not an assumed white.
+            _restoreColor = _isEmissionProperty ? Color.black : material.GetColor(candidate);
             // Emission contributes nothing unless the keyword is on; the base colour
             // stays black so unhighlighted bones look unchanged.
             if (_isEmissionProperty) material.EnableKeyword("_EMISSION");
@@ -90,8 +93,7 @@ public class BoneHighlighter : MonoBehaviour
         {
             if (renderer == null) continue;
             renderer.GetPropertyBlock(_block);
-            // Emission off is black; a base-colour tint has to go back to white.
-            _block.SetColor(_property, _isEmissionProperty ? Color.black : Color.white);
+            _block.SetColor(_property, _restoreColor);
             renderer.SetPropertyBlock(_block);
         }
         _lit.Clear();

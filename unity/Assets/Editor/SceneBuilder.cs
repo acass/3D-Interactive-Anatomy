@@ -19,6 +19,7 @@ public static class SceneBuilder
 {
     const string ScenePath = "Assets/Scenes/SkullTutorXR.unity";
     const string ModelPath = "Assets/Models/SKULL.glb";
+    const string DotMaterialPath = "Assets/Rendering/CalloutDot.mat";
 
     public static void Build()
     {
@@ -32,6 +33,23 @@ public static class SceneBuilder
         EditorSceneManager.SaveScene(scene, ScenePath);
         EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
         Debug.Log($"[scene] saved {ScenePath}");
+    }
+
+    static Material GetOrCreateDotMaterial()
+    {
+        var material = AssetDatabase.LoadAssetAtPath<Material>(DotMaterialPath);
+        if (material != null) return material;
+
+        var shader = Shader.Find("Universal Render Pipeline/Unlit");
+        if (shader == null)
+        {
+            Debug.LogError("[scene] URP Unlit shader missing; is URP installed?");
+            return null;
+        }
+        System.IO.Directory.CreateDirectory("Assets/Rendering");
+        material = new Material(shader) { name = "CalloutDot" };
+        AssetDatabase.CreateAsset(material, DotMaterialPath);
+        return material;
     }
 
     static void BuildLighting()
@@ -147,11 +165,20 @@ public static class SceneBuilder
         var go = new GameObject("Tutor");
 
         var client = go.AddComponent<LiveClient>();
+        // Set with PROXY_HOST=<mac-lan-ip> when running SceneBuilder.Build, so the LAN
+        // address is not baked into source. Overridable on device via the proxyHost PlayerPref.
+        var host = System.Environment.GetEnvironmentVariable("PROXY_HOST");
+        if (!string.IsNullOrEmpty(host)) client.host = host;
+        Debug.Log($"[scene] proxy host = {client.host}");
         var mic = go.AddComponent<MicStreamer>();
         go.AddComponent<AudioSource>();
         var audioOut = go.AddComponent<TutorAudio>();
         var callouts = go.AddComponent<CalloutView>();
         callouts.pointer = pointer;
+        // Assigned here, not found at runtime: a shader referenced only by Shader.Find
+        // is stripped from the player build and Find then returns null.
+        callouts.dotMaterial = GetOrCreateDotMaterial();
+        callouts.labelFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
         var controller = go.AddComponent<TutorController>();
         controller.client = client;

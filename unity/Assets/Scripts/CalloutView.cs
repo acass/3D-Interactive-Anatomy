@@ -19,6 +19,13 @@ public class CalloutView : MonoBehaviour
     public Color dotColor = new Color(0.95f, 0.95f, 1f);
     public Color activeColor = new Color(0.35f, 0.65f, 1f);
 
+    [Tooltip("Assigned by SceneBuilder from a real asset. Do NOT Shader.Find at runtime: " +
+             "an unreferenced shader is stripped from the build and Find returns null.")]
+    public Material dotMaterial;
+
+    [Tooltip("Assigned by SceneBuilder for the same reason as dotMaterial.")]
+    public Font labelFont;
+
     [Tooltip("Controller or hand ray used to reveal a label by pointing. Optional.")]
     public Transform pointer;
     public float pointerRange = 3f;
@@ -35,7 +42,7 @@ public class CalloutView : MonoBehaviour
 
     readonly List<Callout> _callouts = new List<Callout>();
     readonly Dictionary<string, Callout> _byId = new Dictionary<string, Callout>();
-    Material _dotMaterial;
+    Material _dotMaterial; // shared asset, never instantiated or destroyed here
     Transform _head;
     string _activeId;
     string _pointedId;
@@ -47,7 +54,12 @@ public class CalloutView : MonoBehaviour
         Clear();
         if (features == null) return;
 
-        _dotMaterial = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+        if (dotMaterial == null)
+        {
+            Debug.LogError("[CalloutView] dotMaterial is not assigned; callouts disabled");
+            return;
+        }
+        _dotMaterial = dotMaterial;
 
         foreach (var feature in features)
         {
@@ -71,13 +83,14 @@ public class CalloutView : MonoBehaviour
             label.transform.localScale = Vector3.one * (labelScale / (dotRadius * 2f));
             var text = label.AddComponent<TextMesh>();
             text.text = feature.label;
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.font = labelFont;
             text.fontSize = 64;
             text.characterSize = 1f;
             text.anchor = TextAnchor.LowerCenter;
             text.alignment = TextAlignment.Center;
             text.color = Color.white;
-            label.GetComponent<MeshRenderer>().sharedMaterial = text.font.material;
+            if (text.font != null)
+                label.GetComponent<MeshRenderer>().sharedMaterial = text.font.material;
             label.SetActive(false);
 
             var callout = new Callout { Id = feature.id, Dot = dot, Label = label, DotRenderer = dotRenderer };
