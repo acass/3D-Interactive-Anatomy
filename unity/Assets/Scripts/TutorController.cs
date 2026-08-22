@@ -111,8 +111,19 @@ public class TutorController : MonoBehaviour
         if (localNormal.sqrMagnitude < 0.0001f) return;
 
         var toHead = (_head.position - skull.position).normalized;
+        var worldNormal = skull.rotation * localNormal;
+
+        // FromToRotation takes the shortest arc and constrains no roll, so its axis is
+        // arbitrary once the normal points away from the head -- which tipped the skull
+        // (and the caption with it) upside down. Pin both ends to world up instead.
+        var reference = Mathf.Abs(Vector3.Dot(worldNormal, Vector3.up)) > 0.99f
+            ? Vector3.forward   // a straight-up normal (top of the cranium) is degenerate
+            : Vector3.up;
+
         _turnFrom = skull.rotation;
-        _turnTo = Quaternion.FromToRotation(skull.rotation * localNormal, toHead) * skull.rotation;
+        _turnTo = Quaternion.LookRotation(toHead, Vector3.up)
+                * Quaternion.Inverse(Quaternion.LookRotation(worldNormal, reference))
+                * skull.rotation;
         _turnElapsed = 0f;
     }
 
@@ -120,7 +131,7 @@ public class TutorController : MonoBehaviour
     {
         callouts.SetActive(null);
         highlighter.Clear();
-        placement?.Recenter();
+        placement?.FaceHead();   // neutral orientation, but the skull stays where it is
         _turnElapsed = -1f;
     }
 

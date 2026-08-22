@@ -42,17 +42,35 @@ public class SkullPlacement : MonoBehaviour
         _placed = true;
     }
 
-    // Also invoked by the tutor's resetView and by the recenter button.
+    // The recenter button (A/X). Moves the skull back to arm's length in front of you.
     public void Recenter()
     {
         if (_head == null) return;
-        var forward = _head.forward;
-        forward.y = 0f;
-        if (forward.sqrMagnitude < 0.0001f) forward = Vector3.forward;
-        forward.Normalize();
+        transform.position = _head.position + Flattened(_head.forward) * distance
+                             + Vector3.down * dropBelowEyes;
+        FaceHead();
+    }
 
-        transform.position = _head.position + forward * distance + Vector3.down * dropBelowEyes;
-        transform.rotation = Quaternion.LookRotation(-forward, Vector3.up);
+    // Neutral pose without moving it. The tutor's resetView uses this: once the skull is
+    // world-locked it is a thing on your table, and teleporting it to your face because
+    // you said "show the whole skull" breaks that. Moving it stays a deliberate act --
+    // the grab trigger or the recenter button.
+    public void FaceHead()
+    {
+        if (_head == null) return;
+        // Derived from where the skull actually is, not from where the head is looking:
+        // after a grab the skull can be anywhere in the room, and head.forward would
+        // orient it to face a wall.
+        var toHead = Flattened(_head.position - transform.position);
+        // The skull's +Z faces the viewer at rest, so its +Z points at the head.
+        transform.rotation = Quaternion.LookRotation(toHead, Vector3.up);
         transform.localScale = Vector3.one * scale;
+    }
+
+    static Vector3 Flattened(Vector3 direction)
+    {
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f) direction = Vector3.forward;
+        return direction.normalized;
     }
 }

@@ -31,6 +31,12 @@ public static class ProjectSetup
     const string FeatureQuestSupport = "com.unity.openxr.feature.metaquest";
     const string FeatureQuestPlus = "com.unity.openxr.feature.input.metaquestplus";
     const string FeatureOculusTouch = "com.unity.openxr.feature.input.oculustouch";
+    // "Composition Layers Support". Passthrough is not drawn by the camera: the camera
+    // subsystem registers MetaOpenXRPassthroughLayer on OpenXRLayerProvider.Started
+    // (meta-openxr Runtime/Subsystems/Camera/MetaOpenXRCameraSubsystem.cs), and that
+    // provider is owned by this feature. Unity's own Meta feature set lists it under
+    // RequiredFeatureIds. Without it the shell reports [App Enabled for PT: 0].
+    const string FeatureCompositionLayers = "com.unity.openxr.feature.compositionlayers";
 
     public static void Configure()
     {
@@ -60,9 +66,20 @@ public static class ProjectSetup
         }
 
         // Quest 3 is a mobile tile GPU: MSAA over post-processing, no HDR, no shadow cascades.
+        // Values recommended for Quest Passthrough by the installed package docs
+        // (com.unity.xr.meta-openxr Documentation~/get-started/graphics-settings.md).
         pipeline.msaaSampleCount = 4;
         pipeline.supportsHDR = false;
         pipeline.shadowDistance = 10f;
+        renderer.postProcessData = null; // post-processing disabled
+        // Auto, not Always: Always forces an offscreen target and a blit for every frame,
+        // which the same doc calls out as breaking Passthrough compositing.
+        renderer.intermediateTextureMode = IntermediateTextureMode.Auto;
+        // No public setter for terrain holes, and nothing in this scene is terrain.
+        var pipelineSo = new SerializedObject(pipeline);
+        pipelineSo.FindProperty("m_SupportsTerrainHoles").boolValue = false;
+        pipelineSo.ApplyModifiedPropertiesWithoutUndo();
+        EditorUtility.SetDirty(renderer);
         EditorUtility.SetDirty(pipeline);
 
         GraphicsSettings.defaultRenderPipeline = pipeline;
@@ -91,7 +108,46 @@ public static class ProjectSetup
         PlayerSettings.colorSpace = ColorSpace.Linear;
         PlayerSettings.defaultInterfaceOrientation = UIOrientation.LandscapeLeft;
         PlayerSettings.SetGraphicsAPIs(BuildTarget.Android, new[] { UnityEngine.Rendering.GraphicsDeviceType.Vulkan });
+        SetActiveInputHandler();
         Debug.Log("[setup] player settings applied");
+    }
+
+    // The camera's TrackedPoseDriver is UnityEngine.InputSystem.XR.TrackedPoseDriver, and
+    // the Input System package only receives device events when its backend is on. With
+    // activeInputHandler left at 0 (Input Manager only) the driver never moves the camera:
+    // the head pose stays identity, and every world-locked object renders glued to the
+    // head. 2 = Both, so XRControls' UnityEngine.XR.InputDevices polling keeps working.
+    // There is no public PlayerSettings property for this; it lives in the settings asset.
+    // Takes effect on the next editor launch -- a batchmode run that sets it does NOT get
+    // the new backend in the same invocation.
+    static void SetActiveInputHandler()
+    {
+        const int both = 2;
+        var assets = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/ProjectSettings.asset");
+        if (assets == null || assets.Length == 0)
+        {
+            Debug.LogError("[setup] could not open ProjectSettings.asset; activeInputHandler unchanged");
+            return;
+        }
+
+        var settings = new SerializedObject(assets[0]);
+        var property = settings.FindProperty("activeInputHandler");
+        if (property == null)
+        {
+            Debug.LogError("[setup] activeInputHandler property not found; set Player > Active Input Handling to Both by hand");
+            return;
+        }
+
+        if (property.intValue == both)
+        {
+            Debug.Log("[setup] activeInputHandler already Both");
+            return;
+        }
+
+        property.intValue = both;
+        settings.ApplyModifiedPropertiesWithoutUndo();
+        AssetDatabase.SaveAssets();
+        Debug.LogWarning("[setup] activeInputHandler set to Both; relaunch Unity before building or head tracking stays dead");
     }
 
     static void SetupXr()
@@ -110,7 +166,8 @@ public static class ProjectSetup
         EditorUtility.SetDirty(settings);
 
         FeatureHelpers.RefreshFeatures(BuildTargetGroup.Android);
-        foreach (var id in new[] { FeatureQuestSupport, FeatureSession, FeatureCamera, FeatureQuestPlus, FeatureOculusTouch })
+        foreach (var id in new[] { FeatureQuestSupport, FeatureSession, FeatureCamera,
+                                  FeatureCompositionLayers, FeatureQuestPlus, FeatureOculusTouch })
         {
             var feature = FeatureHelpers.GetFeatureWithIdForBuildTarget(BuildTargetGroup.Android, id);
             if (feature == null) { Debug.LogError($"[setup] OpenXR feature not found: {id}"); continue; }

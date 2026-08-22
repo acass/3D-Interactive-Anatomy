@@ -83,7 +83,11 @@ public static class SceneBuilder
         camera.clearFlags = CameraClearFlags.SolidColor;
         camera.backgroundColor = new Color(0f, 0f, 0f, 0f); // alpha 0 or Passthrough is hidden
         cameraGo.AddComponent<AudioListener>();
-        cameraGo.AddComponent<ARCameraManager>();          // this is what turns Passthrough on
+        var cameraManager = cameraGo.AddComponent<ARCameraManager>(); // turns Passthrough on
+
+        var diagnostics = cameraGo.AddComponent<PassthroughDiagnostics>();
+        diagnostics.cameraManager = cameraManager;
+        diagnostics.targetCamera = camera;
 
         var driver = cameraGo.AddComponent<TrackedPoseDriver>();
         driver.trackingType = TrackedPoseDriver.TrackingType.RotationAndPosition;
@@ -110,6 +114,13 @@ public static class SceneBuilder
         var root = new GameObject("Skull");
         placement = root.AddComponent<SkullPlacement>();
 
+        // glTFast picks its material generator from the render pipeline active at IMPORT
+        // time (Runtime/Scripts/Material/MaterialGenerator.cs) and declares no dependency
+        // on the pipeline, so a model imported before URP was assigned keeps Built-In
+        // materials forever. Those shaders have no UniversalForward pass, so URP skips
+        // every renderer and the skull is invisible -- not magenta. Reimport under URP.
+        AssetDatabase.ImportAsset(ModelPath, ImportAssetOptions.ForceUpdate);
+
         var model = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath);
         if (model == null)
         {
@@ -121,6 +132,7 @@ public static class SceneBuilder
             instance.name = "SKULL";
             instance.transform.SetParent(root.transform, false);
             AddCollidersForPointing(instance);
+            AssertUrpMaterials(instance);
         }
 
         highlighter = root.AddComponent<BoneHighlighter>();
@@ -134,6 +146,27 @@ public static class SceneBuilder
         return root;
     }
 
+    // The skull rendering at all depends on its materials being URP ones, and the failure
+    // is silent at runtime: no error, no magenta, just nothing drawn. Fail the build log
+    // instead.
+    static void AssertUrpMaterials(GameObject model)
+    {
+        var renderers = model.GetComponentsInChildren<Renderer>(true);
+        if (renderers.Length == 0)
+        {
+            Debug.LogError("[scene] skull has no renderers");
+            return;
+        }
+
+        var shader = renderers[0].sharedMaterial != null ? renderers[0].sharedMaterial.shader : null;
+        var name = shader != null ? shader.name : "<none>";
+        if (shader == null || !name.StartsWith("Shader Graphs/"))
+            Debug.LogError($"[scene] skull material uses '{name}', not a URP shader; " +
+                           "it will not render. Delete Library/ and rebuild.");
+        else
+            Debug.Log($"[scene] skull: {renderers.Length} renderers, shader {name}");
+    }
+
     // The grab ray needs something to hit. One box over the whole skull is enough and
     // avoids 55 mesh colliders on a mobile GPU budget.
     static void AddCollidersForPointing(GameObject model)
@@ -143,11 +176,14 @@ public static class SceneBuilder
         box.size = new Vector3(0.16f, 0.24f, 0.22f);
     }
 
-    static TextMesh MakeLabel(Transform parent, string name, Vector3 localPosition, float size)
+    // Anchored below the skull but never rotating with it: as a plain child these read
+    // mirrored (the skull's +Z faces the viewer, a TextMesh is readable from behind its
+    // +Z) and turn upside down with it. HeadLabel pins position and billboards them.
+    static TextMesh MakeLabel(Transform anchor, string name, Vector3 worldOffset, float size)
     {
         var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
-        go.transform.localPosition = localPosition;
+        go.transform.SetParent(anchor, false);
+        go.transform.localPosition = worldOffset; // HeadLabel overwrites this each frame
         go.transform.localScale = Vector3.one * size;
         var text = go.AddComponent<TextMesh>();
         text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -156,6 +192,10 @@ public static class SceneBuilder
         text.alignment = TextAlignment.Center;
         text.color = Color.white;
         go.GetComponent<MeshRenderer>().sharedMaterial = text.font.material;
+
+        var follow = go.AddComponent<HeadLabel>();
+        follow.anchor = anchor;
+        follow.worldOffset = worldOffset;
         return text;
     }
 
@@ -169,6 +209,8 @@ public static class SceneBuilder
         // address is not baked into source. Overridable on device via the proxyHost PlayerPref.
         var host = System.Environment.GetEnvironmentVariable("PROXY_HOST");
         if (!string.IsNullOrEmpty(host)) client.host = host;
+        else Debug.LogWarning("[scene] PROXY_HOST not set; falling back to the default in " +
+                              "LiveClient. Rebuilding without it silently reverts the address.");
         Debug.Log($"[scene] proxy host = {client.host}");
         var mic = go.AddComponent<MicStreamer>();
         go.AddComponent<AudioSource>();
