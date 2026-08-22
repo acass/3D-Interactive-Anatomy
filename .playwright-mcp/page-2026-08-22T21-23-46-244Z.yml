@@ -1,0 +1,13 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - button "3D model" [ref=e5]
+    - region "Live announcements":
+      - status
+  - complementary [ref=e9]:
+    - generic [ref=e10]:
+      - heading "Interactive Skull Anatomy" [level=1] [ref=e11]
+      - generic [ref=e12]: idle
+    - generic [ref=e14]:
+      - button "🎤" [ref=e15] [cursor=pointer]
+      - textbox "Ask about a bone, or say “give me a tour”…" [ref=e16]
+      - button "Ask" [ref=e17] [cursor=pointer]
