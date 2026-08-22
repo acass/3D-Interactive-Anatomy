@@ -2,3 +2,18 @@ node_modules
 dist
 .env
 .DS_Store
+
+# Unity
+unity/Library/
+unity/Temp/
+unity/Obj/
+unity/Logs/
+unity/UserSettings/
+unity/Build/
+unity/Builds/
+unity/[Mm]emoryCaptures/
+unity/Recordings/
+*.apk
+*.aab
+*.csproj
+*.sln

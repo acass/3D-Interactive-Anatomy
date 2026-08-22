@@ -8,6 +8,9 @@ export interface Feature {
   position: string; // "x y z" in model space
   normal: string; // "x y z" outward surface normal; camera framing is derived from this
   explanation: string;
+  // GLB node names this feature covers, including mirrored halves. The web app
+  // ignores these; the Quest app tints these meshes when the feature is focused.
+  meshNames: string[];
 }
 
 // Anchor-less info about the Model — whole-skull facts that don't live at one spot
@@ -49,6 +52,7 @@ export const MODEL_SRC = "/SKULL.glb";
 export const features: Feature[] = [
   {
     id: "frontal",
+    meshNames: ["Frontal bone"],
     label: "Frontal bone",
     position: "-0.018 0.148 0.083",
     normal: "-0.14 0.43 0.89",
@@ -57,6 +61,7 @@ export const features: Feature[] = [
   },
   {
     id: "parietal",
+    meshNames: ["Parietal bone left", "Parietal bone right"],
     label: "Parietal bone",
     position: "-0.065 0.158 -0.050",
     normal: "-0.90 0.24 -0.37",
@@ -65,6 +70,7 @@ export const features: Feature[] = [
   },
   {
     id: "temporal",
+    meshNames: ["Temporal bone.l", "Temporal bone.r"],
     label: "Temporal bone",
     position: "-0.070 0.108 -0.035",
     normal: "-0.96 -0.18 -0.22",
@@ -73,6 +79,7 @@ export const features: Feature[] = [
   },
   {
     id: "occipital",
+    meshNames: ["Occipital bone"],
     label: "Occipital bone",
     position: "-0.011 0.110 -0.102",
     normal: "-0.117 -0.151 -0.982",
@@ -81,6 +88,7 @@ export const features: Feature[] = [
   },
   {
     id: "zygomatic",
+    meshNames: ["Zygomatic bone.l", "Zygomatic bone.r"],
     label: "Zygomatic bone",
     position: "-0.051 0.083 0.057",
     normal: "-0.87 0.06 0.49",
@@ -89,6 +97,7 @@ export const features: Feature[] = [
   },
   {
     id: "maxilla",
+    meshNames: ["Maxilla bone.l", "Maxilla bone.r"],
     label: "Maxilla (upper jaw)",
     position: "-0.017 0.059 0.080",
     normal: "-0.27 0.40 0.87",
@@ -97,6 +106,7 @@ export const features: Feature[] = [
   },
   {
     id: "mandible",
+    meshNames: ["Mandible bone"],
     label: "Mandible (lower jaw)",
     position: "-0.011 0.036 0.090",
     normal: "-0.29 -0.35 0.89",

@@ -3,7 +3,8 @@
 // WebSocket; this fans each client out to its own Gemini Live session.
 //
 //   Unity -> proxy : {type:"text", text} | {type:"audio", data:<b64 16kHz pcm>}
-//   proxy -> Unity : {type:"status"|"transcript"|"turnComplete"|"interrupted"}
+//   proxy -> Unity : {type:"manifest", features:[...]}  (once, on connect)
+//                    {type:"status"|"transcript"|"turnComplete"|"interrupted"}
 //                    {type:"audio", data:<b64 24kHz pcm>}
 //                    {type:"focus", featureId} | {type:"reset"}
 //
@@ -17,6 +18,7 @@ import {
   resetView,
   systemInstruction,
 } from "../src/live";
+import { features } from "../src/manifest";
 
 const PORT = Number(process.env.PROXY_PORT ?? 8787);
 const apiKey = process.env.GEMINI_API_KEY ?? process.env.VITE_GEMINI_API_KEY;
@@ -107,6 +109,21 @@ wss.on("connection", async (client: WebSocket) => {
     client.close();
     return;
   }
+
+  // The Feature Manifest is the single source of truth (ADR 0002). The Quest app has
+  // no copy of it: it builds its callouts and bone mapping from this push, so editing
+  // src/manifest.ts and restarting the proxy updates the headset with no APK rebuild.
+  // `explanation` is deliberately withheld — it belongs to systemInstruction(), not the client.
+  send({
+    type: "manifest",
+    features: features.map(({ id, label, position, normal, meshNames }) => ({
+      id,
+      label,
+      position,
+      normal,
+      meshNames,
+    })),
+  });
 
   for (const m of pending.splice(0)) handle(m); // flush anything that arrived pre-connect
 

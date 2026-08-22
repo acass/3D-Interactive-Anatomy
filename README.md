@@ -42,6 +42,44 @@ npm test          # camera-orbit math
 npm run typecheck
 ```
 
+## Quest 3 XR build
+
+A Unity passthrough app lives in [unity/](unity/). The skull hovers at arm's length in
+your room, you talk to it, and it rotates to present the bone you asked about and tints
+that bone. Same Gemini brain as the web app: the Quest talks to `server/proxy.ts`, which
+holds the API key and pushes the Feature Manifest to the headset on connect, so editing
+`src/manifest.ts` and restarting the proxy updates the headset with no APK rebuild.
+
+```bash
+npm run proxy                     # on the Mac, same Wi-Fi as the headset
+adb install -r unity/Build/SkullTutorXR.apk
+```
+
+Set the proxy address on the `Tutor` GameObject's **Live Client** component (`host`),
+or at runtime via the `proxyHost` PlayerPref.
+
+Controls: **trigger** grabs the skull, or selects a callout dot you are pointing at.
+**A** recenters the skull in front of you. **B** mutes the always-on mic.
+
+### Rebuilding
+
+Everything is scripted so it can be re-run from a clean checkout:
+
+```bash
+U="/Applications/Unity/Hub/Editor/6000.3.12f1/Unity.app/Contents/MacOS/Unity"
+$U -batchmode -nographics -projectPath unity -executeMethod PackageBootstrap.AddPackages -logFile -
+$U -batchmode -nographics -projectPath unity -executeMethod ProjectSetup.Configure -quit -logFile -
+$U -batchmode -nographics -projectPath unity -executeMethod SceneBuilder.Build -quit -logFile -
+$U -batchmode -nographics -projectPath unity -buildTarget Android -executeMethod BuildApk.Build -logFile -
+```
+
+### What the XR version deliberately drops
+
+Auto-rotate and the 12s idle reset. In a room, a skull that spins by itself and
+re-orients while you lean in to look at it stops reading as a physical object. The
+camera also never moves: `focusFeature` rotates the skull instead, because in XR the
+camera is the user's head.
+
 ## Status / roadmap
 
 - [x] Skull + bone callouts, camera fly-to, idle auto-rotate, quiet-timeout return
@@ -50,6 +88,7 @@ npm run typecheck
 - [x] Anatomy tutor: faithful bone explanations, guided tour, bounded free answers
 - [x] Spoken audio out (transcript shown on screen)
 - [x] Open-mic voice input with barge-in (🎤 button)
+- [x] Quest 3 passthrough build: life-size skull, voice Q&A, bone tint, 3D callouts
 - [ ] Quiz / "test me" mode
 - [ ] Deeper content tiers (student / clinical) and extra callouts (orbit, sutures)
 
