@@ -1,12 +1,12 @@
 # ninja log v5
-2	273	1787422533711689316	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	e4358c22d833bd66
-274	503	1787422533897415552	/Users/allencass/Desktop/3D-Interactive-Anatomy/unity/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/13716972/obj/arm64-v8a/libswappywrapper.so	3ca8c9706dbd1b09
-2	927	1787422534360111945	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	4b89ae340844da81
-2	934	1787422534369285250	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	931477f8ef0e5079
-1	947	1787422534382621023	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	a47f88cd15cf3ce
-1	955	1787422534390738752	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	971193a5eaffaf84
-1	974	1787422534409552691	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	a8e473cdb224eef6
-2	1049	1787422534479051282	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	18528790b96a98a2
-1	1124	1787422534555117864	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	e1070d8ca9fa36ff
-1	1184	1787422534610210483	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	3ba532620aba6e58
-1185	1276	1787422534712066033	/Users/allencass/Desktop/3D-Interactive-Anatomy/unity/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/13716972/obj/arm64-v8a/libgame.so	c45d1084d84aeab9
+1	387	1787437212740323649	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	e4358c22d833bd66
+388	619	1787437212961656591	/Users/allencass/Desktop/3D-Interactive-Anatomy/unity/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/13716972/obj/arm64-v8a/libswappywrapper.so	3ca8c9706dbd1b09
+1	1072	1787437213435734984	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	971193a5eaffaf84
+1	1122	1787437213485959717	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	931477f8ef0e5079
+1	1124	1787437213490945657	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	4b89ae340844da81
+0	1134	1787437213504159109	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	a47f88cd15cf3ce
+0	1255	1787437213624359920	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	a8e473cdb224eef6
+1	1267	1787437213637366497	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	18528790b96a98a2
+1	1348	1787437213718029911	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	e1070d8ca9fa36ff
+0	1411	1787437213783852712	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	3ba532620aba6e58
+1411	1510	1787437213881114898	/Users/allencass/Desktop/3D-Interactive-Anatomy/unity/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/13716972/obj/arm64-v8a/libgame.so	c45d1084d84aeab9

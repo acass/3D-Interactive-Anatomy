@@ -58,7 +58,8 @@ adb install -r unity/Build/SkullTutorXR.apk
 Set the proxy address on the `Tutor` GameObject's **Live Client** component (`host`),
 or at runtime via the `proxyHost` PlayerPref.
 
-Controls: **trigger** grabs the skull, or selects a callout dot you are pointing at.
+Controls: **grip** grabs the skull; **trigger** selects the bone you are pointing at
+(it tints light blue and its name appears).
 **A** recenters the skull in front of you. **B** mutes the always-on mic.
 
 ### Rebuilding

@@ -12,11 +12,16 @@ public class BoneHighlighter : MonoBehaviour
     [Tooltip("Root of the imported skull; children are matched by GLB node name.")]
     public Transform skullRoot;
 
-    public Color highlightColor = new Color(0.35f, 0.65f, 1f);
+    [Tooltip("Multiplied into the bone's base colour, so keep it light: a saturated blue reads as dark.")]
+    public Color highlightColor = new Color(0.6f, 0.8f, 1f);
 
     [Tooltip("Shader properties tried in order. The first one the material actually has " +
              "is used, so this survives whichever shader glTFast assigns on import.")]
-    public string[] candidateProperties = { "_EmissionColor", "_EmissiveFactor", "_BaseColor", "_Color" };
+    // glTFast's URP shader graph names its properties baseColorFactor / emissiveFactor
+    // (measured: com.unity.cloud.gltfast Runtime/Shader/glTF-pbrMetallicRoughness.shadergraph,
+    // m_OverrideReferenceName). The underscore-prefixed names are URP/Built-In Lit fallbacks.
+    public string[] candidateProperties =
+        { "baseColorFactor", "_BaseColor", "_Color", "emissiveFactor", "_EmissionColor" };
 
     readonly Dictionary<string, List<Renderer>> _byName =
         new Dictionary<string, List<Renderer>>(System.StringComparer.OrdinalIgnoreCase);
@@ -55,12 +60,16 @@ public class BoneHighlighter : MonoBehaviour
         {
             if (!material.HasProperty(candidate)) continue;
             _property = candidate;
-            _isEmissionProperty = candidate.Contains("Emission") || candidate.Contains("Emissive");
+            _isEmissionProperty = candidate.IndexOf("emissi", System.StringComparison.OrdinalIgnoreCase) >= 0;
             // Restore to whatever the model actually ships with, not an assumed white.
             _restoreColor = _isEmissionProperty ? Color.black : material.GetColor(candidate);
             // Emission contributes nothing unless the keyword is on; the base colour
             // stays black so unhighlighted bones look unchanged.
-            if (_isEmissionProperty) material.EnableKeyword("_EMISSION");
+            if (_isEmissionProperty)
+            {
+                material.EnableKeyword("_EMISSION");  // URP/Built-In Lit
+                material.EnableKeyword("_EMISSIVE");  // glTFast shader graph
+            }
             return;
         }
     }

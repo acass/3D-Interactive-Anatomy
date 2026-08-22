@@ -1,4 +1,4 @@
-// Controller input: grab to move the skull, recenter, mute.
+// Controller input: grip to move the skull, trigger to select a bone, recenter, mute.
 //
 // Uses UnityEngine.XR.InputDevices (built into the XR module) rather than XRI's
 // interactors. XRI is installed and is the right home for richer interaction later,
@@ -25,6 +25,7 @@ public class XRControls : MonoBehaviour
     InputDevice _right;
     InputDevice _left;
     bool _wasGrabbing;
+    bool _wasTrigger;
     bool _wasRecenter;
     bool _wasMute;
     Vector3 _grabOffset;
@@ -67,8 +68,14 @@ public class XRControls : MonoBehaviour
     {
         if (skull == null || pointer == null) return;
         _right.TryGetFeatureValue(CommonUsages.triggerButton, out var trigger);
+        _right.TryGetFeatureValue(CommonUsages.gripButton, out var grip);
 
-        if (trigger && !_wasGrabbing)
+        // Trigger with the ray on a bone selects it, same as clicking a callout in the
+        // web app. Grip moves the skull, so the two never compete for one button.
+        if (trigger && !_wasTrigger) callouts?.ClickPointed();
+        _wasTrigger = trigger;
+
+        if (grip && !_wasGrabbing)
         {
             if (Physics.Raycast(pointer.position, pointer.forward, out var hit, grabRange)
                 && hit.transform.IsChildOf(skull))
@@ -77,20 +84,13 @@ public class XRControls : MonoBehaviour
                 _grabRotationOffset = Quaternion.Inverse(pointer.rotation) * skull.rotation;
                 _wasGrabbing = true;
             }
-            else
-            {
-                // A trigger pull with the ray on a callout dot selects it, same as
-                // clicking a callout in the web app.
-                callouts?.ClickPointed();
-                _wasGrabbing = false;
-            }
         }
-        else if (trigger && _wasGrabbing)
+        else if (grip && _wasGrabbing)
         {
             skull.position = pointer.position + pointer.rotation * _grabOffset;
             skull.rotation = pointer.rotation * _grabRotationOffset;
         }
-        else if (!trigger)
+        else if (!grip)
         {
             _wasGrabbing = false;
         }

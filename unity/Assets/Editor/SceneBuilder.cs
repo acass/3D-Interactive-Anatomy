@@ -19,7 +19,6 @@ public static class SceneBuilder
 {
     const string ScenePath = "Assets/Scenes/SkullTutorXR.unity";
     const string ModelPath = "Assets/Models/SKULL.glb";
-    const string DotMaterialPath = "Assets/Rendering/CalloutDot.mat";
 
     public static void Build()
     {
@@ -33,23 +32,6 @@ public static class SceneBuilder
         EditorSceneManager.SaveScene(scene, ScenePath);
         EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
         Debug.Log($"[scene] saved {ScenePath}");
-    }
-
-    static Material GetOrCreateDotMaterial()
-    {
-        var material = AssetDatabase.LoadAssetAtPath<Material>(DotMaterialPath);
-        if (material != null) return material;
-
-        var shader = Shader.Find("Universal Render Pipeline/Unlit");
-        if (shader == null)
-        {
-            Debug.LogError("[scene] URP Unlit shader missing; is URP installed?");
-            return null;
-        }
-        System.IO.Directory.CreateDirectory("Assets/Rendering");
-        material = new Material(shader) { name = "CalloutDot" };
-        AssetDatabase.CreateAsset(material, DotMaterialPath);
-        return material;
     }
 
     static void BuildLighting()
@@ -167,13 +149,21 @@ public static class SceneBuilder
             Debug.Log($"[scene] skull: {renderers.Length} renderers, shader {name}");
     }
 
-    // The grab ray needs something to hit. One box over the whole skull is enough and
-    // avoids 55 mesh colliders on a mobile GPU budget.
+    // Pointing needs a bone-accurate hit: trigger selects the bone under the ray and
+    // hovering reveals its label, so every node gets its own MeshCollider. Nothing
+    // simulates against them (raycasts only), so 55 of them cost load-time cooking,
+    // not frame time. The grip-grab ray hits the same colliders.
     static void AddCollidersForPointing(GameObject model)
     {
-        var box = model.AddComponent<BoxCollider>();
-        box.center = new Vector3(0f, 0.11f, 0f);
-        box.size = new Vector3(0.16f, 0.24f, 0.22f);
+        var count = 0;
+        foreach (var filter in model.GetComponentsInChildren<MeshFilter>(true))
+        {
+            if (filter.sharedMesh == null) continue;
+            filter.gameObject.AddComponent<MeshCollider>().sharedMesh = filter.sharedMesh;
+            count++;
+        }
+        if (count == 0) Debug.LogError("[scene] skull has no MeshFilters; pointing and grab will not work");
+        else Debug.Log($"[scene] skull: {count} mesh colliders");
     }
 
     // Anchored below the skull but never rotating with it: as a plain child these read
@@ -217,9 +207,6 @@ public static class SceneBuilder
         var audioOut = go.AddComponent<TutorAudio>();
         var callouts = go.AddComponent<CalloutView>();
         callouts.pointer = pointer;
-        // Assigned here, not found at runtime: a shader referenced only by Shader.Find
-        // is stripped from the player build and Find then returns null.
-        callouts.dotMaterial = GetOrCreateDotMaterial();
         callouts.labelFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
         var controller = go.AddComponent<TutorController>();
