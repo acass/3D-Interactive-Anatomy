@@ -9,10 +9,6 @@ using UnityEngine;
 
 public class CalloutView : MonoBehaviour
 {
-    [Tooltip("Anchors are authored in glTF space; this corrects for the importer's " +
-             "handedness flip. Verified on device: the mandible dot must sit on the lower jaw.")]
-    public Vector3 anchorAxisFlip = new Vector3(1f, 1f, -1f);
-
     public float dotRadius = 0.006f;
     public float labelOffset = 0.03f;
     public float labelScale = 0.004f;
@@ -61,15 +57,16 @@ public class CalloutView : MonoBehaviour
         }
         _dotMaterial = dotMaterial;
 
+        var boneRenderers = anchorSpace.GetComponentsInChildren<Renderer>(true);
+
         foreach (var feature in features)
         {
-            var local = Vector3.Scale(feature.RawPosition, anchorAxisFlip);
-
             var dot = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             dot.name = $"callout-{feature.id}";
             dot.transform.SetParent(anchorSpace, false);
-            dot.transform.localPosition = local;
+            dot.transform.localPosition = feature.LocalPosition;
             dot.transform.localScale = Vector3.one * (dotRadius * 2f);
+            WarnIfOffBone(feature, dot.transform.position, boneRenderers);
             var dotRenderer = dot.GetComponent<Renderer>();
             dotRenderer.sharedMaterial = _dotMaterial;
             dotRenderer.SetPropertyBlock(ColorBlock(dotColor));
@@ -97,6 +94,28 @@ public class CalloutView : MonoBehaviour
             _callouts.Add(callout);
             _byId[feature.id] = callout;
         }
+    }
+
+    // ponytail: AABB containment, not surface distance -- enough to catch an axis
+    // mirror, which is the only way these anchors have gone wrong so far.
+    static void WarnIfOffBone(FeatureDto feature, Vector3 worldPos, Renderer[] renderers)
+    {
+        if (feature.meshNames == null || feature.meshNames.Length == 0) return;
+        var matched = false;
+        foreach (var renderer in renderers)
+        {
+            var name = renderer.gameObject.name;
+            if (!Array.Exists(feature.meshNames, n => string.Equals(n, name, StringComparison.OrdinalIgnoreCase)))
+                continue;
+            matched = true;
+            var bounds = renderer.bounds;
+            bounds.Expand(0.02f); // 1cm of slack each side: anchors sit on the surface
+            if (bounds.Contains(worldPos)) return;
+        }
+        // Unknown mesh names are BoneHighlighter's warning, not ours.
+        if (matched)
+            Debug.LogWarning($"[CalloutView] '{feature.id}' dot is outside its bone bounds; " +
+                             "check FeatureDto.AnchorAxisFlip");
     }
 
     public void SetActive(string featureId)

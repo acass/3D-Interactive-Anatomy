@@ -22,9 +22,6 @@ public class TutorController : MonoBehaviour
     [Tooltip("Seconds for the skull to slerp round to a newly focused feature.")]
     public float turnSeconds = 0.8f;
 
-    [Tooltip("Same handedness correction CalloutView applies to anchor positions.")]
-    public Vector3 anchorAxisFlip = new Vector3(1f, 1f, -1f);
-
     readonly Dictionary<string, FeatureDto> _features = new Dictionary<string, FeatureDto>();
     Quaternion _turnFrom, _turnTo;
     float _turnElapsed = -1f;
@@ -67,7 +64,6 @@ public class TutorController : MonoBehaviour
         if (features == null) return;
         foreach (var feature in features) _features[feature.id] = feature;
 
-        callouts.anchorAxisFlip = anchorAxisFlip;
         callouts.Build(features, skull);
         callouts.OnCalloutClicked -= OnCalloutClicked;
         callouts.OnCalloutClicked += OnCalloutClicked;
@@ -107,7 +103,7 @@ public class TutorController : MonoBehaviour
             _head = Camera.main.transform;
         }
 
-        var localNormal = Vector3.Scale(feature.RawNormal, anchorAxisFlip).normalized;
+        var localNormal = feature.LocalNormal.normalized;
         if (localNormal.sqrMagnitude < 0.0001f) return;
 
         var toHead = (_head.position - skull.position).normalized;
