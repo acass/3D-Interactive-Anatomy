@@ -45,6 +45,11 @@
       button[type="submit"] { background: #3c78ff; }
       #mic-btn { background: #2a2d38; }
       #mic-btn.live { background: #e0453c; }
+      #chat-input::placeholder { color: #9aa0ad; } /* 6.4:1 on #14161c; browser default fails AA */
+      @media (max-width: 700px) {
+        body { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+        aside { border-left: none; border-top: 1px solid #23252e; max-height: 45vh; }
+      }
     </style>
   </head>
   <body>
@@ -54,19 +59,21 @@
       auto-rotate
       auto-rotate-delay="0"
       interpolation-decay="200"
+      min-camera-orbit="auto auto 0.1m"
       shadow-intensity="1"
       exposure="1"
+      alt="3D human skull with labeled bones"
     ></model-viewer>
 
     <aside>
       <header>
         <h1>Interactive Skull Anatomy</h1>
-        <div id="status">idle</div>
+        <div id="status" aria-live="polite">idle</div>
       </header>
-      <div id="transcript"></div>
+      <div id="transcript" role="log" aria-label="Conversation"></div>
       <form id="chat-form">
-        <button type="button" id="mic-btn" title="Toggle open mic">🎤</button>
-        <input id="chat-input" placeholder="Ask about a bone, or say &ldquo;give me a tour&rdquo;…" autocomplete="off" />
+        <button type="button" id="mic-btn" title="Toggle open mic" aria-label="Toggle microphone" aria-pressed="false">🎤</button>
+        <input id="chat-input" aria-label="Ask the tutor" placeholder="Ask about a bone, or say &ldquo;give me a tour&rdquo;…" autocomplete="off" />
         <button type="submit">Ask</button>
       </form>
     </aside>

@@ -17,3 +17,7 @@ unity/Recordings/
 *.aab
 *.csproj
 *.sln
+
+# Playwright
+test-results/
+playwright-report/

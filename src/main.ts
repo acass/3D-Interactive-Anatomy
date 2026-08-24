@@ -4,7 +4,7 @@ import { orbitFromNormal, parseVec } from "./orbit";
 import { connectLive } from "./live";
 import { AudioPlayer, MicStreamer } from "./audio";
 
-const FOCUS_RADIUS = 0.16; // meters from the anchor when focused (SKULL.glb is ~0.24m tall)
+const FOCUS_RADIUS = 0.28; // meters from the anchor when focused (SKULL.glb is ~0.24m tall; 0.16 shows only a wall of bone)
 const IDLE_TIMEOUT_MS = 12000; // return to idle pose after this much quiet
 const DEFAULT_ORBIT = "0deg 80deg 105%"; // idle framing faces the front of the skull
 
@@ -51,7 +51,8 @@ function focusFeature(id: string) {
   const f = features.find((x) => x.id === id);
   if (!f) return;
   mv.autoRotate = false;
-  mv.cameraTarget = f.position;
+  // model-viewer silently ignores cameraTarget without units (hotspot positions are fine unitless).
+  mv.cameraTarget = f.position.trim().split(/\s+/).map((v) => `${v}m`).join(" ");
   mv.cameraOrbit = orbitFromNormal(parseVec(f.normal), FOCUS_RADIUS);
   setActive(id);
   bumpIdleTimer();
@@ -135,6 +136,7 @@ micBtn.addEventListener("click", async () => {
   if (mic.active) {
     mic.stop();
     micBtn.classList.remove("live");
+    micBtn.setAttribute("aria-pressed", "false");
     micBtn.textContent = "🎤";
     return;
   }
@@ -143,6 +145,7 @@ micBtn.addEventListener("click", async () => {
     const conn = await ensureConnected();
     await mic.start((b64) => conn.sendAudioChunk(b64));
     micBtn.classList.add("live");
+    micBtn.setAttribute("aria-pressed", "true");
     micBtn.textContent = "◉ Listening";
   } catch (err) {
     statusEl.textContent = `mic error: ${(err as Error).message}`;

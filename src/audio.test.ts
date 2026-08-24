@@ -8,6 +8,10 @@ describe("PCM <-> base64", () => {
     expect(Array.from(restored)).toEqual(Array.from(samples));
   });
 
+  it("round-trips an empty buffer", () => {
+    expect(b64ToInt16(int16ToB64(new Int16Array(0))).length).toBe(0);
+  });
+
   it("preserves length", () => {
     const samples = new Int16Array(4096).map((_, i) => (i * 37) % 65536 - 32768);
     expect(b64ToInt16(int16ToB64(samples)).length).toBe(4096);

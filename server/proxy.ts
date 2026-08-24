@@ -36,6 +36,7 @@ wss.on("connection", async (client: WebSocket) => {
     if (client.readyState === WebSocket.OPEN) client.send(JSON.stringify(o));
   };
   let session: Session | null = null;
+  let announced = false;
 
   // Attach the message listener BEFORE awaiting connect — ws drops messages that
   // arrive with no listener, and clients send their first turn on open. Buffer
@@ -74,12 +75,20 @@ wss.on("connection", async (client: WebSocket) => {
         tools: [{ functionDeclarations: [focusFeature, resetView] }],
       },
       callbacks: {
-        onopen: () => send({ type: "status", status: "connected" }),
+        // "connected" waits for Gemini's first message (setupComplete): the socket opening
+        // proves nothing, an invalid key is only rejected after open.
+        onopen: () => {},
         onerror: (e: any) =>
           send({ type: "status", status: `error: ${e?.message ?? "failed"}` }),
-        onclose: (e: any) =>
-          send({ type: "status", status: `closed: ${e?.reason ?? e?.code}` }),
+        onclose: (e: any) => {
+          send({ type: "status", status: `closed: ${e?.reason ?? e?.code}` });
+          client.close(); // no session left to talk to; do not leave the client hanging
+        },
         onmessage: (msg: any) => {
+          if (!announced) {
+            announced = true;
+            send({ type: "status", status: "connected" });
+          }
           for (const call of msg.toolCall?.functionCalls ?? []) {
             if (call.name === "focusFeature")
               send({ type: "focus", featureId: String(call.args?.featureId) });
