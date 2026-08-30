@@ -107,20 +107,26 @@ public class TutorController : MonoBehaviour
         if (localNormal.sqrMagnitude < 0.0001f) return;
 
         var toHead = (_head.position - skull.position).normalized;
-        var worldNormal = skull.rotation * localNormal;
-
-        // FromToRotation takes the shortest arc and constrains no roll, so its axis is
-        // arbitrary once the normal points away from the head -- which tipped the skull
-        // (and the caption with it) upside down. Pin both ends to world up instead.
-        var reference = Mathf.Abs(Vector3.Dot(worldNormal, Vector3.up)) > 0.99f
-            ? Vector3.forward   // a straight-up normal (top of the cranium) is degenerate
-            : Vector3.up;
 
         _turnFrom = skull.rotation;
-        _turnTo = Quaternion.LookRotation(toHead, Vector3.up)
-                * Quaternion.Inverse(Quaternion.LookRotation(worldNormal, reference))
-                * skull.rotation;
+        _turnTo = PoseFor(localNormal, toHead, _head.up);
         _turnElapsed = 0f;
+    }
+
+    // Absolute pose for a bone: a function of the authored normal and where your head is,
+    // never of the pose the skull happens to be in. Composing a delta onto skull.rotation
+    // instead made the target depend on the order you asked about bones, so the sideways
+    // lean from one bone was still there on the next.
+    public static Quaternion PoseFor(Vector3 localNormal, Vector3 toHead, Vector3 headUp)
+    {
+        // Pinning the skull's own +Y to world up is what kills the roll. A normal parallel
+        // to +Y has no defined roll, so fall back to the model's forward.
+        var localRef = Mathf.Abs(localNormal.y) > 0.99f ? Vector3.forward : Vector3.up;
+        // Standing directly over the skull makes world up a useless reference too.
+        var worldRef = Mathf.Abs(Vector3.Dot(toHead, Vector3.up)) > 0.99f ? headUp : Vector3.up;
+
+        return Quaternion.LookRotation(toHead, worldRef)
+             * Quaternion.Inverse(Quaternion.LookRotation(localNormal, localRef));
     }
 
     public void ResetView()
